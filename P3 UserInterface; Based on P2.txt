@@ -1,0 +1,397 @@
+/*Name: Brandon Rubio*/
+
+#include <stdio.h>
+#include "document.h"
+#include <sysexits.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+/*Function Prototypes for helper functions*/
+static int check_blank(char *line);
+static int has_hashtag(char *line);
+static int check_number(char *num_string);
+static int has_astric(char *line);
+
+/*
+Main function that takes command line arguments
+to determine the stream used for input. 
+Lines from the input are read
+and compared to commands that
+correspond to the functions 
+in document.c*/
+
+int main(int argc, char **argv){
+  int i = 0, j = 0, /*para_num, line_num,*/ scan_check; 
+  FILE *user_stream;
+  Document doc;
+  char input_line[MAX_STR_SIZE+1], *line_ptr, *after_astric, command[MAX_STR_SIZE+1], astric[MAX_STR_SIZE+1],
+    new_line[MAX_STR_SIZE+1], filename[MAX_STR_SIZE+1],target[MAX_STR_SIZE+1], 
+    replacement[MAX_STR_SIZE+1], check_after[MAX_STR_SIZE+1], para_num[MAX_STR_SIZE+1], 
+    line_num[MAX_STR_SIZE+1], updated_new[MAX_STR_SIZE+1], check[MAX_STR_SIZE+1];
+ 
+  if(argc == 1){
+    printf("> ");
+    user_stream = stdin;
+
+  }else if(argc==2){
+    user_stream = fopen(argv[1], "r");
+    
+    if(user_stream == NULL){
+
+      fprintf(stderr, "%s cannot be opened.", argv[1]);
+
+      return EX_OSERR;
+    }
+
+  }else if(argc > 2){
+
+    fprintf(stderr, "Usage: user_interface\n");
+    fprintf(stderr, "Usage: user_interface <filename>\n");
+
+    return EX_USAGE;
+  }
+
+  init_document(&doc, "main_document");
+
+  fgets(input_line, MAX_STR_SIZE+1, user_stream);
+
+  while(!feof(user_stream)){
+
+      i = 0;
+
+      input_line[strlen(input_line)-1] = '\0';
+
+      line_ptr = input_line;
+
+      sscanf(input_line, "%s", command);
+
+      /* while(*line_ptr ==' '){
+      if(*line_ptr == '\0'){
+	printf("Invalid Command");
+      }
+       	line_ptr++;
+    }
+
+    while(*line_ptr != ' ' ){
+	command = *line_ptr;
+	command++;
+	line_ptr++;
+    }*/
+
+      /*MAKE HELPER FUNCTION FOR FINDING BLANK LINES!!!!*/
+ if(check_blank(input_line)==FAILURE && has_hashtag(command) == FAILURE){
+
+    if(!strcmp(command,"add_paragraph_after")){
+	
+      scan_check = sscanf(input_line, "%s %s %s", command,  para_num, check_after);
+      
+      if (atoi(para_num) <  0  || check_number(para_num) == FAILURE || scan_check != 2 ) {
+	printf("Invalid Command\n");
+      }else {
+	if (add_paragraph_after(&doc, atoi(para_num)) == FAILURE) {
+          printf("add_paragraph_after failed\n");
+        }
+      }
+      /*      if(atoi(para_num) != 0 || atoi(para_num) < 0 || scan_check != 2){
+	  printf("Invalid Command\n");
+	}else{
+
+	if(add_paragraph_after(&doc,atoi(para_num)) == FAILURE){
+	    printf("add_paragraph_after failed\n");
+	  }
+
+	  }*/
+
+    }else if(!strcmp(command,"add_line_after")){
+      /* char *after_astric;*/
+
+      sscanf(input_line, "%s %s %s %s", command, para_num,
+	     line_num, new_line);
+
+      after_astric = strstr(input_line, new_line);
+      
+      if (atoi(para_num) < 0 || atoi(line_num) < 0 ||check_number(line_num) == FAILURE || *after_astric != '*') {
+
+	printf("Invalid Command\n");	
+
+      }else {
+
+	after_astric++;
+
+        if (add_line_after(&doc, atoi(para_num),atoi(line_num), after_astric) == FAILURE) {
+
+          printf("add_line_after failed\n");
+
+        }
+
+      }
+  
+      /*if (atoi(para_num) != 0 && atoi(line_num) > 0/* && has_astric(check) == SUCCESS*/  /*&& atoi(line_num) != 0 &&
+	atoi(line_num) > 0 && strcmp(astric,"*")==0) {*/
+	/*check++;*/
+	/*if (add_line_after(&doc, atoi(para_num),atoi(line_num), new_line) == FAILURE) {
+	  printf("add_line_after failed\n");
+	}
+
+      }else {
+	printf("Invalid Command\n");
+      }*/
+      /*if(atoi(para_num) != 0 || atoi(para_num) < 0 ||atoi(line_num)!= 0 ||  atoi(line_num) < 0 || *check != '*' || scan_check != 4){
+	printf("Invalid Command\n");
+      }else{
+	check++;
+	if(add_line_after(&doc, atoi(para_num),atoi(line_num), check) == FAILURE){
+	  printf("add_line_after failed\n");
+	}
+	}*/
+    
+    }else if(!strcmp(command, "print_document")){
+      scan_check = sscanf(input_line, "%s %s", command, check_after);
+
+      if(scan_check != 1){
+	printf("Invalid Command\n");
+      }else{
+	print_document(&doc);
+      }
+
+	/*how do I check whether more information was given after print_document?*/
+      
+    }else if(!strcmp(command, "quit")){
+      scan_check = sscanf(input_line, "%s %s", command, check_after);
+
+      if(scan_check != 1){
+	printf("Invalid Command\n");
+      }else{
+	exit(EXIT_SUCCESS);
+	/*fclose(user_stream);
+	  break;*/
+      }
+
+      /*How do I check whether more information was given after quit?*/
+
+    }else if(!strcmp(command, "exit")){
+
+      scan_check = sscanf(input_line, "%s %s", command, check_after);
+
+      if(scan_check != 1){
+	printf("Invalid Command\n");
+      }else{
+	exit(EXIT_SUCCESS);
+	/*fclose(user_stream);
+	  break;*/
+      }
+
+      /*How do I check whether more information was given after exit?*/
+
+    }else if(!strcmp(command, "append_line")){
+      /*char *after_astric;*/
+
+      scan_check = sscanf(input_line,"%s %s %s", command , para_num, /*astric,*/ new_line);
+
+      after_astric = strstr(input_line, new_line);
+
+      if (atoi(para_num) > 0 &&  *after_astric=='*') {
+	
+	  after_astric++;
+	
+	if (append_line(&doc,atoi(para_num), after_astric) == FAILURE) {
+	  printf("append_line failed\n");
+	}
+      }else{
+	printf("Invalid Command\n");
+      }
+      /*if(atoi(para_num) < 0 || *after_astric != '*' ||scan_check != 3){
+	printf("Invalid Command\n");
+      }else{
+	after_astric++;
+	if(append_line(&doc, atoi(para_num), after_astric) ==FAILURE){
+	  printf("append_line failed\n");
+	}
+
+	}*/
+
+    }else if(!strcmp(command, "remove_line")){
+      scan_check = sscanf(input_line, "%s %s %s",command, para_num, line_num);
+
+      if(atoi(para_num) != 0 ||atoi(para_num) < 0 ||check_number(line_num) != SUCCESS ||atoi(line_num) <0 || scan_check != 3){
+	printf("Invalid command\n");
+      }else{
+
+	if(remove_line(&doc, atoi(para_num), atoi(line_num)) == FAILURE){
+	  printf("remove_line failed\n");
+	}
+
+      }
+
+
+    }else if(!strcmp(command, "load_file")){
+      scan_check = sscanf(input_line,"%s %s %s",command, filename, check_after);
+
+      if(scan_check != 2){
+	printf("Invalid command\n");
+      }else{
+
+	if(load_file(&doc, filename) == FAILURE){
+	  printf("load_file failed\n");
+	}
+
+      }
+
+    }else if(!strcmp(command, "replace_text")){
+      scan_check = sscanf(input_line, "%s %s %s", command, target, replacement);
+
+      if(scan_check != 3){
+	printf("Invalid Command\n");
+      }else{
+
+	if(replace_text(&doc, target, replacement)==FAILURE){
+	  printf("replace_text failed\n");
+	}
+
+      }
+
+
+    }else if(!strcmp(command, "highlight_text")){
+      scan_check = sscanf(input_line, "%s %s", command, target);
+
+      if(scan_check != 2){
+	printf("Invalid Command\n");
+      }else{
+
+	highlight_text(&doc, target);
+
+      }
+
+    }else if(!strcmp(command, "remove_text")){
+      scan_check =  sscanf(input_line, "%s %s", command, target);
+
+      if(scan_check != 2){
+	printf("Invalid Command\n");
+      }else{
+
+	remove_text(&doc, target);
+
+      }
+    }else if(!strcmp(command, "save_document")){
+
+      scan_check = sscanf(input_line, "%s %s", command, filename);
+
+      if(scan_check != 2){
+	printf("Invalid Command\n");
+      }else{
+
+	if(save_document(&doc, filename)==FAILURE){
+	  printf("save_document failed\n");
+	}
+
+      }
+    }else if(!strcmp(command, "reset_document")){
+
+      scan_check = sscanf(input_line, "%s %s", command, check_after);
+
+      if(scan_check != 1){
+	printf("Invalid Command\n");
+      }else{
+
+	reset_document(&doc);
+     
+      }
+   
+    }else{
+
+      printf("Invalid Command\n");
+
+    }
+
+ }
+   
+     if(argc == 1){
+      printf("> ");
+     }
+     
+     fgets(input_line, MAX_STR_SIZE+1, user_stream);
+     
+  }
+
+  fclose(user_stream);
+
+  return SUCCESS;
+  
+}
+
+
+/*Determines whether a line
+  is blank or not*/
+static int check_blank(char *line){
+  int index = 0;
+
+  if(*line == '\n' || *line == '\0'){
+    return SUCCESS;
+  }
+
+  while(index < strlen(line)){
+    if(!isspace(line[index])){ 
+     return FAILURE;
+    }
+    index++;
+  }
+
+  return SUCCESS;
+
+}
+
+/*Checks for the presence of the 
+  hashtag symbol in a line*/
+static int has_hashtag(char *line){
+  int index = 0;
+
+  while(*line == ' '){
+    line++;
+  }
+
+  if(*line ==  '#'){
+    return SUCCESS;
+  }else{
+
+    return FAILURE;
+  
+  }
+}
+
+/*Checks whether the assumed
+  number given is actually a number*/
+static int check_number(char *num_string) {
+  int index, length = strlen(num_string);
+
+  while(index < length){
+    if( !isdigit(num_string[index]) ) {
+      return FAILURE;
+    }
+    index++;
+  }
+
+  return SUCCESS;
+}
+
+/*Checks for astric symbol
+  in the line given*/
+
+static int has_astric(char *line){
+  int index, length;
+  char *ptr;
+
+  index =0;
+  length = strlen(line);
+
+  while(index < length){
+    strcpy(ptr,(const char *)*line);
+    if(*ptr == '*'){
+      return SUCCESS;
+    }
+    line++;
+  }
+
+  return FAILURE;
+
+}
